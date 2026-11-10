@@ -294,15 +294,20 @@ the existing undo budget (one record per object, at most 30 per step).
 `props.h`. The place-object system takes an object's position and rotation from the
 player's place cursor: the transform the player's game sends with its input every frame
 (`ClientPlayerInputData` +0x2f8, the server's `PlayerInput` +0x300; for some modes the
-aim at +0x330 / +0x338). That cursor comes from the ghost `client_cursor` works out each
-frame. So a dedicated server places an object wherever the client's ghost is, and the
-feature needs nothing on the server.
+aim at +0x330 / +0x338). That cursor is the ghost `client_cursor` works out each frame.
+So a dedicated server places an object wherever the client's ghost is, and the feature
+needs nothing on the server.
 
-- **Ghost.** `cursor_xf_hook` (client_cursor's own call, the one Object lines reads) puts
-  the turns and the nudge on top of the game's result: rotation = held rotation × turn
-  (about the object's y) × tilt (x) × roll (z), so the game's own turning still works
-  and the mod's turns follow the object; the nudge in cm along the turned object's axes,
-  or the world's. The game then draws, checks (red ghost) and sends the moved ghost.
+- **Ghost.** `client_cursor` first gets the spot and the surface normal from the cursor
+  transform (the one Object lines reads; its +0x18 is the normal, not a rotation), then
+  the placement check (2994d0) turns them and the game's own turn into the object's
+  transform (position, rotation quaternion) and stores it, once for the place cursor and
+  once for the aim. `prop_check_hook` (both calls) puts the turns and the nudge on top of
+  what it stored: rotation = the game's rotation × turn (about the object's y) × tilt (x)
+  × roll (z), so the game's own turning still works and the mod's turns follow the
+  object; the nudge in cm along the turned object's axes, or the world's. The game then
+  draws and sends the moved ghost. The placement check (red ghost) has already run on the
+  game's spot, so a nudge can push an object into a wall.
 - **Input.** `input_encode_hook` compares the place cursor and the aim that go out with
   the last 8 ghosts. Still a ghost from before the move: the mod moves it for that packet
   (and puts it back after the encoder ran). The result is logged on each click.
