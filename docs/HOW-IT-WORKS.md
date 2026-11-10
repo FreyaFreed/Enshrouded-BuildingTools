@@ -289,6 +289,30 @@ function. The game drops an undo request while the place animation still plays, 
 press is sent again every 0.3 s for up to 1.5 s until the undo's refund runs. Lines use
 the existing undo budget (one record per object, at most 30 per step).
 
+## Exact rotation and nudge of objects
+
+`props.h`. The place-object system takes an object's position and rotation from the
+player's place cursor: the transform the player's game sends with its input every frame
+(`ClientPlayerInputData` +0x2f8, the server's `PlayerInput` +0x300; for some modes the
+aim at +0x330 / +0x338). That cursor comes from the ghost `client_cursor` works out each
+frame. So a dedicated server places an object wherever the client's ghost is, and the
+feature needs nothing on the server.
+
+- **Ghost.** `cursor_xf_hook` (client_cursor's own call, the one Object lines reads) puts
+  the turns and the nudge on top of the game's result: rotation = held rotation × turn
+  (about the object's y) × tilt (x) × roll (z), so the game's own turning still works
+  and the mod's turns follow the object; the nudge in cm along the turned object's axes,
+  or the world's. The game then draws, checks (red ghost) and sends the moved ghost.
+- **Input.** `input_encode_hook` compares the place cursor and the aim that go out with
+  the last 8 ghosts. Still a ghost from before the move: the mod moves it for that packet
+  (and puts it back after the encoder ran). The result is logged on each click.
+- **Single player.** The place hook does the same for the click's place info, in case the
+  in-process server got the ghost from before the move.
+
+The values are plain settings (`[Objects]` Turn, Tilt, Roll, NudgeX/Y/Z,
+`NudgeWorldAxes`), changed by keys while an object is in hand (they stay the game's
+otherwise) or in the Object settings window; keys write the ini 2 s after the last press.
+
 ## Dedicated servers
 
 `enshrouded_server.exe` loads the same DLL (`g_dedicated`, from the exe name). It has

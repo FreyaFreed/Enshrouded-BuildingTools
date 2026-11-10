@@ -900,6 +900,26 @@ the hotfix client shows every feature available.
 - Mod: SIG_PROP_UNDO_TEST (cave), SIG_PROP_REC_CALL, SIG_CAN_UNDO_CALL, SIG_BUILD_MODE_CALL,
   SIG_UNDO_KEY_CALL. The undo's refund call (SIG_PAY_UNDO) tells the key code the undo ran.
 
+## Exact rotation and nudge (fork 0.31.2-props1, Hotfix #5 RVAs)
+
+- Server `player_building_place_prop` = c6280 in enshrouded_server.exe (client 2da2e0; the
+  mod's SIG_PROP_PLACE_CALL, SIG_PROP_PAY_A / _B and SIG_PROP_UNDO_TEST match once in the
+  server exe too: c6ca3, c6bd5, c6c30, c656d). The place info's position and rotation come
+  from `39420(out, rdx = [rbp-0x68], r8 = [rbp-0x58])` at c6a4e: a 0x38-byte cursor
+  transform, int64 position converted to float metres (×2^-32) into info +0x10, rotation
+  floats into +0x1c.
+- 39420: `test byte [rdx+0x1b1], 1` and word [rdx+0x18] == 5 or 8 -> copy r8+0x338 (the
+  aim), else r8+0x300 (the place cursor). r8 = PlayerInput: +0x300 / +0x338 are the
+  client's ClientPlayerInputData +0x2f8 / +0x330 (fromClient at +8). So the server places
+  an object at the transform the client sent; it does not cast its own ray for objects.
+  It reads the latest input when the place animation's ChangeVoxel event runs, not the
+  click's packet, so a transform patched only in the click's packet would be lost.
+- Client: client_cursor (294620) calls the cursor transform 2905c0 at 295626 with out =
+  rbp+0x350, then 2994d0 twice (rsi+0x10 and rsi+0x48, the cursor component's place and
+  aim) with out as an argument; 2994d0 checks the placement (valid flags at [r12]) and
+  stores the component's transform. Whether the stored rotation is the one in out was not
+  traced to the end: the input hook logs what goes out (moved already / moved here).
+
 ## Hotfix #5 (1.0.1.2, build 1287369, 2026-11-04): no mod change
 
 0.30.0 works unchanged (checked offline on the hotfix exes). All 86 client signatures

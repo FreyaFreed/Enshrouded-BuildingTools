@@ -771,6 +771,51 @@ int main(int argc, char** argv) {
         obj_turn(q, kPi / 2, t);
         CHECK(fabs(t[1] - sin(kPi / 4)) < 1e-6 && fabs(t[3] - cos(kPi / 4)) < 1e-6, "objects: turn about up");
     }
+    {   // exact rotation and nudge of the object in hand
+        using namespace core;
+        const int64_t p0[3] = { 100 * M, 50 * M, -20 * M };
+        const float id[4] = { 0, 0, 0, 1 };
+        int64_t p[3]; float r[4];
+        PropXf x = {};
+        prop_apply(x, p0, id, p, r);
+        CHECK(!memcmp(p, p0, sizeof p) && r[0] == 0 && r[1] == 0 && r[2] == 0 && r[3] == 1 && !prop_xf_on(x), "props: nothing set = the held transform");
+        x.turn = 90;
+        prop_apply(x, p0, id, p, r);
+        float w[4]; obj_turn(id, kPi / 2, w);
+        CHECK(fabs(r[1] - w[1]) < 1e-6 && fabs(r[3] - w[3]) < 1e-6 && fabs(r[0]) < 1e-6 && fabs(r[2]) < 1e-6, "props: turn 90 about up, as the line turn");
+        auto axis = [](const float* q, double x, double y, double z, double* out) {
+            const double qd[4] = { q[0], q[1], q[2], q[3] }, v[3] = { x, y, z };
+            quat_apply(qd, v, out);
+        };
+        double a[3], b[3];
+        x = {}; x.turn = 90; x.tilt = 90;
+        prop_apply(x, p0, id, p, r);
+        axis(r, 0, 1, 0, a);
+        CHECK(fabs(a[0] - 1) < 1e-6 && fabs(a[1]) < 1e-6 && fabs(a[2]) < 1e-6, "props: tilt about the turned object's x (up ends on +x)");
+        const float wall[4] = { (float)sin(kPi / 4), 0, 0, (float)cos(kPi / 4) };   // on a wall: up = +z
+        x = {}; x.turn = 90;
+        prop_apply(x, p0, wall, p, r);
+        axis(r, 0, 1, 0, a); axis(r, 1, 0, 0, b);
+        CHECK(fabs(a[2] - 1) < 1e-6 && fabs(b[1] - 1) < 1e-6, "props: turn about the object's own up (object on a wall)");
+        x = {}; x.nudge[0] = 100;
+        float t90[4]; obj_turn(id, kPi / 2, t90);
+        prop_apply(x, p0, t90, p, r);
+        bool local = llabs(p[0] - p0[0]) < 16 && llabs(p[1] - p0[1]) < 16 && llabs(p[2] - (p0[2] - M)) < 16;
+        x.world = 1;
+        prop_apply(x, p0, t90, p, r);
+        bool world = p[0] == p0[0] + M && p[1] == p0[1] && p[2] == p0[2];
+        CHECK(local && world, "props: nudge along the object's axes or the world's");
+        x = {}; x.nudge[1] = 5; x.nudge[2] = -5; x.world = 1;
+        prop_apply(x, p0, id, p, r);
+        const int64_t cm5 = (int64_t)(0.05 * kFix + 0.5);
+        CHECK(p[1] == p0[1] + cm5 && p[2] == p0[2] - cm5, "props: nudge in cm, rounded to the fixed point");
+        const float big[4] = { 0, 0, 0, 2 };
+        x = {}; x.roll = 30;
+        prop_apply(x, p0, big, p, r);
+        CHECK(fabs(r[0] * r[0] + r[1] * r[1] + r[2] * r[2] + r[3] * r[3] - 1) < 1e-6 && fabs(r[2] - sin(kPi / 12)) < 1e-6, "props: roll about z, unit result");
+        CHECK(prop_wrap_deg(195) == -165 && prop_wrap_deg(-180) == 180 && prop_wrap_deg(180) == 180 && prop_wrap_deg(-195) == 165 &&
+              prop_wrap_deg(0) == 0, "props: degrees kept in -179..180");
+    }
 
     printf(fails ? "\n%d FAILED\n" : "\nall tests passed\n", fails);
     return fails ? 1 : 0;

@@ -41,12 +41,14 @@ static bool prop_now() { return g_propItem && (GetTickCount() - g_propTick < 300
 // you host (also when alone) runs the world in this process, so the lines work there.
 static bool obj_remote() { return g_dedicated || g_remoteKnown == 1; }
 // The click is this player's own (a hosted game also places the objects of the players who joined):
-// the click's spot is next to this game's own ghost of the held object.
+// the click's spot is next to this game's own ghost of the held object (moved by props.h, or as
+// the game had it before the move).
+static bool prop_at_base(const float* pos);
 static bool own_click(const float* pos) {
     if (!pos || !prop_now() || !g_ghost.valid || GetTickCount() - g_ghost.tick > 1500) return false;
     double d2 = 0;
     for (int a = 0; a < 3; a++) { double d = (double)g_ghost.pos[a] / core::kFix - pos[a]; d2 += d * d; }
-    return d2 < 1.5 * 1.5;
+    return d2 < 1.5 * 1.5 || prop_at_base(pos);
 }
 // Plants (ItemInfo.growthInfo.hasGrowthInfo, +0x7d8: seeds and seedlings) are left to XHL
 // Planting Assistant when it is loaded with planting on (XHL\config\xhl-area-harvest.json,
@@ -314,7 +316,10 @@ static uint8_t prop_pay_hook(uint8_t* mode, CostList* list, uint8_t consume) {
     g_objStepList = (uint8_t*)list != mode + 0xf0 && many.data ? list : nullptr;
     return 1;
 }
+static bool prop_place_fix(const uint8_t* info, uint8_t* copy);
 static uint8_t prop_place_hook(void* ctx, uint8_t* info, uint32_t item) {
+    alignas(16) static uint8_t moved[0x50];          // the click with the exact rotation and nudge (props.h)
+    if (prop_place_fix(info, moved)) info = moved;
     LONG stage = g_objStageTid == GetCurrentThreadId() ? InterlockedExchange(&g_objStage, 0) : 0;
     const int m = obj_mode();
     if (!stage && info && m == core::OBJ_SINGLE && obj_tool_on() && !g_dedicated && (g_cfg.objRot || g_cfg.objElev) &&
@@ -403,6 +408,8 @@ static uint8_t prop_place_hook(void* ctx, uint8_t* info, uint32_t item) {
 }
 
 // ---- settings window (screen 52 while g_objWin)
+static void draw_prop_rows();
+static void prop_reset();
 // g_objWinShown: main.cpp (before the play-state UI)
 // One number row: the game's option row over values around the current one, then -10 / +10.
 static bool ui_int(const char* label, int cur, int lo, int hi, int step, int* out) {
@@ -493,12 +500,14 @@ static void draw_obj_window() {
         if (flat && ui_option(T(S_OBJ_REF), refs, core::OBJ_REF_COUNT, g_cfg.objRef, &v)) g_cfg.objRef = v;
         const char* const offOn[] = { T(S_OPT_OFF), T(S_OPT_ON) };
         if (many && ui_option(T(S_OBJ_TURN), offOn, 2, g_cfg.objTurn ? 1 : 0, &v)) g_cfg.objTurn = v;
+        draw_prop_rows();
     }
     ui.endBox(list);
     if (scroll) ui.endScroll(st);
     ui.beginBox(btns, 0);
     UiVec2 bgap{ 24, 0 };
     ui.setSpacingX(ui_node(btns), &bgap, 0);
+    if (ui_button(T(S_PROP_RESET))) prop_reset();
     if (ui_button(T(S_OBJ_REROLL))) { g_cfg.objSeed = (int)((GetTickCount() * 2654435761u) >> 1) | 1; LOG(.str("objects: new random values")); }
     if (ui_button(T(S_OBJ_CLOSE))) g_menuReq = 2;
     ui.endBox(btns);
