@@ -809,6 +809,24 @@ int main(int argc, char** argv) {
         prop_apply(x, p0, t90, p, r);
         bool world = p[0] == p0[0] + M && p[1] == p0[1] && p[2] == p0[2];
         CHECK(local && world, "props: nudge along the object's axes or the world's");
+        x = {}; x.nudge[0] = 100; x.turn = 90; x.tilt = 30;
+        prop_apply(x, p0, id, p, r);
+        CHECK(p[0] == p0[0] + M && p[1] == p0[1] && p[2] == p0[2], "props: the turns turn a nudged object where it is");
+        {
+            const float none[4] = { 0, 0, 0, 1 };
+            float cam90[4]; obj_turn(none, kPi / 2, cam90);         // looking along +x
+            const float down[4] = { (float)sin(kPi / 4), 0, 0, (float)cos(kPi / 4) };   // looking straight down
+            int ax[6], sg[6];
+            prop_nudge_axis(none, none, 0, &ax[0], &sg[0]); prop_nudge_axis(none, none, 1, &ax[1], &sg[1]);
+            prop_nudge_axis(none, none, 2, &ax[2], &sg[2]);
+            CHECK(ax[0] == 0 && sg[0] == 1 && ax[1] == 2 && sg[1] == 1 && ax[2] == 1 && sg[2] == 1, "props: arrows, camera along +z: right +x, away +z, up +y");
+            prop_nudge_axis(cam90, none, 0, &ax[0], &sg[0]); prop_nudge_axis(cam90, none, 1, &ax[1], &sg[1]);
+            CHECK(ax[0] == 2 && sg[0] == -1 && ax[1] == 0 && sg[1] == 1, "props: arrows, camera along +x: right -z, away +x");
+            prop_nudge_axis(none, t90, 0, &ax[0], &sg[0]); prop_nudge_axis(none, t90, 1, &ax[1], &sg[1]);
+            CHECK(ax[0] == 2 && sg[0] == 1 && ax[1] == 0 && sg[1] == -1, "props: arrows on a turned object's axes (its x = world -z)");
+            prop_nudge_axis(down, none, 1, &ax[1], &sg[1]);
+            CHECK(ax[1] == 2, "props: arrows, looking straight down: away = the screen's up");
+        }
         x = {}; x.nudge[1] = 5; x.nudge[2] = -5; x.world = 1;
         prop_apply(x, p0, id, p, r);
         const int64_t cm5 = (int64_t)(0.05 * kFix + 0.5);

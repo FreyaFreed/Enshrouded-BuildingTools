@@ -34,13 +34,16 @@ static volatile LONG g_propGhostN = 0;               // frames seen (the latest 
 static PropGhost prop_last() { LONG n = g_propGhostN; PropGhost g = {}; if (n > 0) g = g_propGhost[(n - 1) & 7]; return g; }
 
 // from prop_check_hook: the transform the placement check stored (slot 0 = the place cursor, 1 =
-// the aim). When it holds an object (an invalid ghost stores nothing: the transform is then still
-// the one moved last frame, and is left), the turns and the nudge go on top.
-static uint8_t g_propOut[2][0x28];                  // each transform as the mod left it last frame
+// the aim), with the turns and the nudge on top. The check does not always store one (an invalid
+// ghost): then the transform is still the one the mod left last time, and the turns and the nudge
+// go on the game's transform from before again (keys pressed in the meantime show at once).
+static uint8_t g_propOut[2][0x28];                  // each transform as the mod left it last time
+static uint8_t g_propBase[2][0x28];                 // and as the game stored it
 static void prop_ghost(uint8_t* xf, int slot) {
     if (!prop_now()) return;
-    uint8_t* last = g_propOut[slot];
-    if (!memcmp(xf, last, sizeof g_propOut[0])) return;
+    const size_t size = sizeof g_propOut[0];
+    if (memcmp(xf, g_propOut[slot], size)) memcpy(g_propBase[slot], xf, size);
+    memcpy(xf, g_propBase[slot], size);
     PropGhost g = {};
     memcpy(g.pos, xf, 24); memcpy(g.rot, xf + 0x18, 16);
     g.tick = GetTickCount();
@@ -49,7 +52,7 @@ static void prop_ghost(uint8_t* xf, int slot) {
         core::prop_apply(prop_xf(), g.pos, g.rot, (int64_t*)xf, (float*)(xf + 0x18));
         memcpy(g.movedPos, xf, 24); memcpy(g.movedRot, xf + 0x18, 16);
     }
-    memcpy(last, xf, sizeof g_propOut[0]);
+    memcpy(g_propOut[slot], xf, size);
     if (slot) return;
     // objects.h's ghost (lines, own_click) is the cursor transform's spot: moved by the same nudge
     if (g.moved) for (int a = 0; a < 3; a++) g_ghost.pos[a] += g.movedPos[a] - g.pos[a];
@@ -186,6 +189,19 @@ static void prop_reset() {
     g_propSaveAt = GetTickCount() | 1;
     LOG(.str("props: rotation and nudge reset"));
 }
+// the camera of the last game frame (the ring cursor_xf_body fills, also with an object in hand)
+static bool cam_latest(float* rot) {
+    const LONG n = g_camN;
+    if (n <= 0) return false;
+    const CamSnap& c = g_camRing[(n - 1) & 15];
+    for (int tries = 0; tries < 4; tries++) {
+        const LONG s0 = c.seq;
+        if (s0 & 1) continue;
+        memcpy(rot, c.rot, 16);
+        if (c.seq == s0) return true;
+    }
+    return false;
+}
 static bool prop_repeats(int a) { return a >= ACT_PROP_TURN_P && a < ACT_PROP_RESET; }
 static void prop_act(int a) {
     if (!obj_tool_on() || !prop_now()) return;
@@ -197,8 +213,18 @@ static void prop_act(int a) {
         int* v = k < 2 ? &g_cfg.propTurn : k < 4 ? &g_cfg.propTilt : &g_cfg.propRoll;
         *v = core::prop_wrap_deg(*v + sign * deg);
     } else {
-        int& v = g_cfg.propNudge[(k - 6) / 2];
-        v += sign * cm;
+        // the arrows follow the camera: the axis of the nudge's frame that points most to the
+        // right / away from the camera (up for numpad + / -)
+        static const int kDir[3] = { 0, 2, 1 };          // X keys right, Y keys up, Z keys away
+        int axis = (k - 6) / 2, s = 1;
+        float cam[4];
+        if (cam_latest(cam)) {
+            const PropGhost g = prop_last();
+            const float none[4] = { 0, 0, 0, 1 };
+            core::prop_nudge_axis(cam, g_cfg.propWorld || !g.tick ? none : g.rot, kDir[axis], &axis, &s);
+        }
+        int& v = g_cfg.propNudge[axis];
+        v += s * sign * cm;
         if (v > 1000) v = 1000; else if (v < -1000) v = -1000;
     }
     g_propSaveAt = GetTickCount() | 1;
@@ -213,6 +239,12 @@ static void prop_save_tick() {
         LOG(.str("props: turn ").i(g_cfg.propTurn).str(" tilt ").i(g_cfg.propTilt).str(" roll ").i(g_cfg.propRoll)
             .str(" nudge ").i(g_cfg.propNudge[0]).c('/').i(g_cfg.propNudge[1]).c('/').i(g_cfg.propNudge[2])
             .str(g_cfg.propWorld ? " cm (world axes)" : " cm (object axes)"));
+        float c[4];
+        if (cam_latest(c)) {   // the view, for the arrows' directions
+            const float x = c[0], y = c[1], z = c[2], w = c[3];
+            LOG(.str("props: camera view (").f(2.f * (x * z + w * y)).c(',').f(2.f * (y * z - w * x)).c(',').f(1.f - 2.f * (x * x + y * y))
+                .str("), held rotation (").f(prop_last().rot[0]).c(',').f(prop_last().rot[1]).c(',').f(prop_last().rot[2]).c(',').f(prop_last().rot[3]).c(')'));
+        }
     }
 }
 

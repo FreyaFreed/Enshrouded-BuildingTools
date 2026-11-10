@@ -305,8 +305,14 @@ needs nothing on the server.
   once for the aim. `prop_check_hook` (both calls) puts the turns and the nudge on top of
   what it stored: rotation = the game's rotation × turn (about the object's y) × tilt (x)
   × roll (z), so the game's own turning still works and the mod's turns follow the
-  object; the nudge in cm along the turned object's axes, or the world's. The game then
-  draws and sends the moved ghost. The placement check (red ghost) has already run on the
+  object; the nudge in cm along the object's axes as the game holds it (before the mod's
+  turns, so the turns turn the object where it is), or the world's. The game then draws
+  and sends the moved ghost. The check does not store a transform every frame (an invalid
+  ghost): the mod keeps the game's last one and puts the turns and the nudge on it again,
+  so a key pressed meanwhile shows at once.
+- **Keys.** The nudge arrows follow the camera: right / left and away / closer step the
+  axis of the nudge's frame (the object's or the world's) that points most that way,
+  level (`core::prop_nudge_axis`); numpad + / - the one most up. The placement check (red ghost) has already run on the
   game's spot, so a nudge can push an object into a wall.
 - **Input.** `input_encode_hook` compares the place cursor and the aim that go out with
   the last 8 ghosts. Still a ghost from before the move: the mod moves it for that packet

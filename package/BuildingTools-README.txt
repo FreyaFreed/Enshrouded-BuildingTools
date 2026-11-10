@@ -182,15 +182,17 @@ Exact rotation and nudge (an object in hand)
     Numpad 6 / 4     turn about the object's up axis + / -
     Numpad 8 / 2     tilt about its X axis + / -
     Numpad 9 / 7     roll about its Z axis + / -
-    Right / Left     nudge along X + / -
-    Up / Down        nudge along Z + / -
+    Right / Left     nudge right / left (as you look)
+    Up / Down        nudge away / closer
     Numpad + / -     nudge up / down
     Numpad 5         reset rotation and nudge
   One press turns 15 degrees or nudges 5 cm; with Ctrl held, 1. Held keys repeat.
   The ghost shows the result, the text under the crosshair the values. They stay
   until you reset them (also for the next objects). Object settings (Caps Lock
   wheel) has the same values to set by number, the key steps, and whether the
-  nudge follows the object's axes (turned with it) or the world's. Saved in
+  nudge follows the object's axes (turned with it) or the world's. The arrows
+  step the axis that points most that way from the camera; the turns turn the
+  object where it is, nudged or not. Saved in
   [Objects] of the ini (Turn, Tilt, Roll, NudgeX/Y/Z, NudgeWorldAxes, TurnStep,
   NudgeStep); keys ObjectTurnPlus ... ObjectResetRotation in [Keys].
 

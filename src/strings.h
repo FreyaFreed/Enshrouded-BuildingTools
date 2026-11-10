@@ -308,12 +308,12 @@
     X(S_ACT_PROP_TILT_M, "obj.key_tilt_minus", "Object in hand: tilt -") \
     X(S_ACT_PROP_ROLL_P, "obj.key_roll_plus", "Object in hand: roll +") \
     X(S_ACT_PROP_ROLL_M, "obj.key_roll_minus", "Object in hand: roll -") \
-    X(S_ACT_PROP_X_P, "obj.key_nudge_x_plus", "Object in hand: nudge X +") \
-    X(S_ACT_PROP_X_M, "obj.key_nudge_x_minus", "Object in hand: nudge X -") \
+    X(S_ACT_PROP_X_P, "obj.key_nudge_x_plus", "Object in hand: nudge right") \
+    X(S_ACT_PROP_X_M, "obj.key_nudge_x_minus", "Object in hand: nudge left") \
     X(S_ACT_PROP_Y_P, "obj.key_nudge_up", "Object in hand: nudge up") \
     X(S_ACT_PROP_Y_M, "obj.key_nudge_down", "Object in hand: nudge down") \
-    X(S_ACT_PROP_Z_P, "obj.key_nudge_z_plus", "Object in hand: nudge Z +") \
-    X(S_ACT_PROP_Z_M, "obj.key_nudge_z_minus", "Object in hand: nudge Z -") \
+    X(S_ACT_PROP_Z_P, "obj.key_nudge_z_plus", "Object in hand: nudge away") \
+    X(S_ACT_PROP_Z_M, "obj.key_nudge_z_minus", "Object in hand: nudge closer") \
     X(S_ACT_PROP_RESET, "obj.key_xf_reset", "Object in hand: reset rotation and nudge")
 
 enum Str {

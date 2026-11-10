@@ -3,6 +3,18 @@
 Each `## x.y.z` section is used as the release notes on GitHub and as the file
 changelog on Nexus Mods, so keep it short and written for players.
 
+## 0.31.2-props3 (fork test build)
+
+- **The arrows follow the camera**: right / left nudge to your right and left, up / down
+  away from you and closer, whichever way you look (they used to step fixed axes, so
+  they could feel swapped). Each press still steps one of the X / Y / Z values: the axis
+  of the object (or the world) that points most that way.
+- **Turning a nudged object turns it where it is.** The nudge went along the turned
+  object's axes, so turning swung a nudged object around its old spot.
+- **Keys show on the ghost at once**, also while you stand still; turning no longer stops
+  after a full turn. (props2 only took up new values when the ghost moved.)
+- Key names: "nudge right / left / away / closer" (ini names unchanged).
+
 ## 0.31.2-props2 (fork test build)
 
 - **Turn, tilt and roll now turn the object.** props1 turned the surface direction under

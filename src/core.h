@@ -971,11 +971,19 @@ inline void quat_apply(const double* q, const double* v, double* out) {
     out[1] = v[1] + q[3] * t[1] + (q[2] * t[0] - q[0] * t[2]);
     out[2] = v[2] + q[3] * t[2] + (q[0] * t[1] - q[1] * t[0]);
 }
-// The held transform (position fixed point, rotation) with the turns and the nudge.
-inline void prop_apply(const PropXf& x, const int64_t* pos, const float* rot, int64_t* outPos, float* outRot) {
-    double q[4] = { rot[0], rot[1], rot[2], rot[3] };
+// A rotation as a unit quaternion in doubles (none: no rotation)
+inline void prop_unit(const float* rot, double* q) {
+    for (int k = 0; k < 4; k++) q[k] = rot[k];
     double n = d_sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
     if (n < 1e-6) { q[0] = q[1] = q[2] = 0; q[3] = 1; } else for (int k = 0; k < 4; k++) q[k] /= n;
+}
+// The held transform (position fixed point, rotation) with the turns and the nudge. The nudge goes
+// along the object's axes as the game holds it (before the turns), so the turns turn the object
+// where it is.
+inline void prop_apply(const PropXf& x, const int64_t* pos, const float* rot, int64_t* outPos, float* outRot) {
+    double q[4], held[4];
+    prop_unit(rot, q);
+    for (int k = 0; k < 4; k++) held[k] = q[k];
     const double ang[3] = { x.turn * kPi / 180, x.tilt * kPi / 180, x.roll * kPi / 180 };
     const int axis[3] = { 1, 0, 2 };                          // turn y, tilt x, roll z
     for (int k = 0; k < 3; k++) {
@@ -985,12 +993,37 @@ inline void prop_apply(const PropXf& x, const int64_t* pos, const float* rot, in
         quat_mul(q, r, t);
         for (int i = 0; i < 4; i++) q[i] = t[i];
     }
-    n = d_sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+    const double n = d_sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
     for (int k = 0; k < 4; k++) outRot[k] = (float)(q[k] / n);
     double v[3] = { x.nudge[0] / 100.0, x.nudge[1] / 100.0, x.nudge[2] / 100.0 }, w[3];
     if (x.world) for (int k = 0; k < 3; k++) w[k] = v[k];
-    else quat_apply(q, v, w);
+    else quat_apply(held, v, w);
     for (int k = 0; k < 3; k++) outPos[k] = pos[k] + (int64_t)(w[k] * kFix + (w[k] < 0 ? -0.5 : 0.5));
+}
+// A nudge key follows the camera (rotation `cam`, looking along its z; x right, y up): `dir` 0 =
+// right, 1 = away from the camera (both level), 2 = up. Gives the axis of the nudge's frame (the
+// object's rotation `frame`, or the world's) that points most that way, and its sign.
+inline void prop_nudge_axis(const float* cam, const float* frame, int dir, int* axis, int* sign) {
+    const double x = cam[0], y = cam[1], z = cam[2], w = cam[3];
+    double f[3] = { 2 * (x * z + w * y), 0, 1 - 2 * (x * x + y * y) };           // the view, level
+    double n = d_sqrt(f[0] * f[0] + f[2] * f[2]);
+    if (n < 0.1) { f[0] = 2 * (x * y - w * z); f[2] = 2 * (y * z + w * x); n = d_sqrt(f[0] * f[0] + f[2] * f[2]); }   // straight down: the screen's up
+    if (n < 1e-6) { f[0] = 0; f[2] = 1; n = 1; }
+    f[0] /= n; f[2] /= n;
+    double d[3] = { 0, 1, 0 };
+    if (dir == 0) { d[0] = f[2]; d[2] = -f[0]; d[1] = 0; }                     // up x view
+    else if (dir == 1) { d[0] = f[0]; d[2] = f[2]; d[1] = 0; }
+    double q[4];
+    prop_unit(frame, q);
+    double best = -1;
+    for (int k = 0; k < 3; k++) {
+        double e[3] = { 0, 0, 0 }, a[3];
+        e[k] = 1;
+        quat_apply(q, e, a);
+        const double dot = a[0] * d[0] + a[1] * d[1] + a[2] * d[2];
+        const double m = dot < 0 ? -dot : dot;
+        if (m > best) { best = m; *axis = k; *sign = dot < 0 ? -1 : 1; }
+    }
 }
 // degrees kept in -179..180 (keys step past the half turn)
 inline int prop_wrap_deg(int d) { d %= 360; if (d > 180) d -= 360; if (d <= -180) d += 360; return d; }
