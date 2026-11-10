@@ -3,6 +3,11 @@
 Each `## x.y.z` section is used as the release notes on GitHub and as the file
 changelog on Nexus Mods, so keep it short and written for players.
 
+## 0.33.0-props4 (fork test build)
+
+- The exact rotation and nudge on top of Building Tools 0.33.0 (Blueprints, Shroudforge
+  download). Nothing changed in the feature; blueprints place their objects without it.
+
 ## 0.31.2-props3 (fork test build)
 
 - **The arrows follow the camera**: right / left nudge to your right and left, up / down
@@ -38,6 +43,7 @@ changelog on Nexus Mods, so keep it short and written for players.
   resets; one press is 15 degrees or 5 cm (both settable), with Ctrl 1. The same values,
   the steps and the axes are in the Object settings window (Caps Lock wheel). The
   settings stay until you reset them, and the text under the crosshair shows them.
+
 ## 0.33.0
 
 - **Shroudforge**: a second download, "Building Tools for Shroudforge", for players who use
