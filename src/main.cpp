@@ -21,7 +21,7 @@ using core::Aabb;
 using core::I3;
 
 #define MOD_NAME    "Building Tools"
-#define MOD_VERSION "0.33.0"
+#define MOD_VERSION "0.33.0-props1"
 
 // -------------------------------------------------------------- freestanding
 extern "C" {
@@ -211,6 +211,12 @@ struct Config {
     int keyBpSub = 0;                            // Blueprint mode: save <-> place
     int bpObjects = 1;                           // build the blueprint's objects (else blocks only)
     int objMode = 0, objCount = 10, objSpacing = 0, objRot = 0, objElev = 0, objRef = 0, objTurn = 1, objSeed = 1;
+    // exact rotation (degrees) and nudge (cm) of the object in hand (props.h), their key steps and keys
+    int propTurn = 0, propTilt = 0, propRoll = 0, propNudge[3] = { 0, 0, 0 }, propWorld = 0, propTurnStep = 15, propNudgeStep = 5;
+    int keyPropTurnP = VK_NUMPAD6, keyPropTurnM = VK_NUMPAD4, keyPropTiltP = VK_NUMPAD8, keyPropTiltM = VK_NUMPAD2;
+    int keyPropRollP = VK_NUMPAD9, keyPropRollM = VK_NUMPAD7;
+    int keyPropXP = VK_RIGHT, keyPropXM = VK_LEFT, keyPropYP = VK_ADD, keyPropYM = VK_SUBTRACT, keyPropZP = VK_UP, keyPropZM = VK_DOWN;
+    int keyPropReset = VK_NUMPAD5;
     char language[16] = "auto";  // text language: auto (as the game), or a file code (pl, de, ...)
 };
 static Config g_cfg;
@@ -272,6 +278,15 @@ static void write_full_ini(const Config& c) {
      .t("\r\nObjectSettings=").i(c.keyObjMenu).t("\r\n")
      .t("; Blueprint mode on / off, and its action save <-> place (0 = no key)\r\nBlueprintMode=").i(c.keyBlueprint)
      .t("\r\nBlueprintAction=").i(c.keyBpSub).t("\r\n")
+     .t("; Object in hand: turn, tilt and roll +/- (one key step, with Ctrl 1 degree), nudge along X, Y (up) and Z +/-\r\n")
+     .t(";     (one key step, with Ctrl 1 cm), reset both (numpad 96..105, arrows 37..40, numpad + 107, numpad - 109)\r\n")
+     .t("ObjectTurnPlus=").i(c.keyPropTurnP).t("\r\nObjectTurnMinus=").i(c.keyPropTurnM)
+     .t("\r\nObjectTiltPlus=").i(c.keyPropTiltP).t("\r\nObjectTiltMinus=").i(c.keyPropTiltM)
+     .t("\r\nObjectRollPlus=").i(c.keyPropRollP).t("\r\nObjectRollMinus=").i(c.keyPropRollM)
+     .t("\r\nObjectNudgeXPlus=").i(c.keyPropXP).t("\r\nObjectNudgeXMinus=").i(c.keyPropXM)
+     .t("\r\nObjectNudgeUp=").i(c.keyPropYP).t("\r\nObjectNudgeDown=").i(c.keyPropYM)
+     .t("\r\nObjectNudgeZPlus=").i(c.keyPropZP).t("\r\nObjectNudgeZMinus=").i(c.keyPropZM)
+     .t("\r\nObjectResetRotation=").i(c.keyPropReset).t("\r\n")
      .t("\r\n[Tools]\r\n")
      .t("; Tools in use (1) or not (0). A tool that is off does nothing: its keys are free for the\r\n")
      .t(";     game and it leaves the building box hints and the tools wheel. AreaShapes = the roof,\r\n")
@@ -322,6 +337,14 @@ static void write_full_ini(const Config& c) {
      .t("SaveReference=").i(c.bpRef).t("\r\nSaveWidth=").i(c.bpW).t("\r\nSaveDepth=").i(c.bpD).t("\r\nSaveHeight=").i(c.bpH).t("\r\n")
      .t("; Place window: the blueprint's point that sits at the block you look at (same numbers)\r\nPlaceReference=").i(c.bpPlaceRef).t("\r\n")
      .t("; 1 = build the blueprint's objects (doors, chests, furniture...), 0 = leave them out\r\nObjects=").i(c.bpObjects).t("\r\n")
+     .t("; Exact rotation of the object in hand, on top of the game's (also when you join a server):\r\n")
+     .t(";     turn (about its up axis), tilt (about its X), roll (about its Z), degrees -179..180\r\n")
+     .t("Turn=").i(c.propTurn).t("\r\nTilt=").i(c.propTilt).t("\r\nRoll=").i(c.propRoll).t("\r\n")
+     .t("; Nudge of the object in hand, cm (-1000..1000): X, Y (up), Z; along the object's axes (0) or the world's (1)\r\n")
+     .t("NudgeX=").i(c.propNudge[0]).t("\r\nNudgeY=").i(c.propNudge[1]).t("\r\nNudgeZ=").i(c.propNudge[2])
+     .t("\r\nNudgeWorldAxes=").i(c.propWorld).t("\r\n")
+     .t("; What one key press changes: degrees (1..90), cm (1..100); with Ctrl held always 1\r\n")
+     .t("TurnStep=").i(c.propTurnStep).t("\r\nNudgeStep=").i(c.propNudgeStep).t("\r\n")
      .t("\r\n[Limits]\r\n")
      .t("; Most shapes one area action may build, replace or remove (max 20000)\r\nMaxShapes=").i(c.maxShapes).t("\r\n")
      .t("; Most shapes one connected replace (fill bucket) repaints (max = MaxShapes)\r\nFillLimit=").i(c.fillLimit).t("\r\n")
@@ -428,7 +451,29 @@ static void load_config() {
         g_cfg.objRef     = clampv(ini_int(L"Objects", L"Reference", 0), 0, core::OBJ_REF_COUNT - 1, 0);
         g_cfg.objTurn    = ini_int(L"Objects", L"TurnWithLine", 1) != 0;
         g_cfg.objSeed    = ini_int(L"Objects", L"Seed", 1);
+        g_cfg.propTurn   = core::prop_wrap_deg(ini_int(L"Objects", L"Turn", 0));
+        g_cfg.propTilt   = core::prop_wrap_deg(ini_int(L"Objects", L"Tilt", 0));
+        g_cfg.propRoll   = core::prop_wrap_deg(ini_int(L"Objects", L"Roll", 0));
+        g_cfg.propNudge[0] = clampv(ini_int(L"Objects", L"NudgeX", 0), -1000, 1000, 0);
+        g_cfg.propNudge[1] = clampv(ini_int(L"Objects", L"NudgeY", 0), -1000, 1000, 0);
+        g_cfg.propNudge[2] = clampv(ini_int(L"Objects", L"NudgeZ", 0), -1000, 1000, 0);
+        g_cfg.propWorld  = ini_int(L"Objects", L"NudgeWorldAxes", 0) != 0;
+        g_cfg.propTurnStep  = clampv(ini_int(L"Objects", L"TurnStep", 15), 1, 90, 15);
+        g_cfg.propNudgeStep = clampv(ini_int(L"Objects", L"NudgeStep", 5), 1, 100, 5);
     }
+    g_cfg.keyPropTurnP = ini_int(L"Keys", L"ObjectTurnPlus", VK_NUMPAD6);
+    g_cfg.keyPropTurnM = ini_int(L"Keys", L"ObjectTurnMinus", VK_NUMPAD4);
+    g_cfg.keyPropTiltP = ini_int(L"Keys", L"ObjectTiltPlus", VK_NUMPAD8);
+    g_cfg.keyPropTiltM = ini_int(L"Keys", L"ObjectTiltMinus", VK_NUMPAD2);
+    g_cfg.keyPropRollP = ini_int(L"Keys", L"ObjectRollPlus", VK_NUMPAD9);
+    g_cfg.keyPropRollM = ini_int(L"Keys", L"ObjectRollMinus", VK_NUMPAD7);
+    g_cfg.keyPropXP    = ini_int(L"Keys", L"ObjectNudgeXPlus", VK_RIGHT);
+    g_cfg.keyPropXM    = ini_int(L"Keys", L"ObjectNudgeXMinus", VK_LEFT);
+    g_cfg.keyPropYP    = ini_int(L"Keys", L"ObjectNudgeUp", VK_ADD);
+    g_cfg.keyPropYM    = ini_int(L"Keys", L"ObjectNudgeDown", VK_SUBTRACT);
+    g_cfg.keyPropZP    = ini_int(L"Keys", L"ObjectNudgeZPlus", VK_UP);
+    g_cfg.keyPropZM    = ini_int(L"Keys", L"ObjectNudgeZMinus", VK_DOWN);
+    g_cfg.keyPropReset = ini_int(L"Keys", L"ObjectResetRotation", VK_NUMPAD5);
     bool noLanguage;
     {
         wchar_t p[MAX_PATH], w[16];
@@ -452,7 +497,8 @@ static void load_config() {
         ini_int(L"Keys", L"RadialMenu", -1) == -1 || ini_int(L"Keys", L"HoldReplace", -1) == -1 ||
         ini_int(L"Area", L"DrawBoxBlocks", -1) == -1 || ini_int(L"Area", L"ExactWidth", -9999) == -9999 ||
         ini_int(L"Tools", L"AreaShapes", -1) == -1 || ini_int(L"Objects", L"Count", -1) == -1 ||
-        ini_int(L"Debug", L"Profile", -1) == -1 || ini_int(L"Blueprints", L"Objects", -1) == -1)
+        ini_int(L"Debug", L"Profile", -1) == -1 || ini_int(L"Blueprints", L"Objects", -1) == -1 ||
+        ini_int(L"Objects", L"TurnStep", -1) == -1)
         write_full_ini(g_cfg);
 }
 
@@ -1174,11 +1220,11 @@ static uint8_t* g_cxClientRet = nullptr;          // return address of client_cu
 static bool prop_now();
 static bool prop_item(const uint8_t* it);
 static void obj_ghost(const uint8_t* out, const uint8_t* q);
-static uint8_t* cursor_xf_hook(uint8_t* out, uint8_t* sys, uint8_t* q, uint8_t* ray) {
-    PROF(PF_CXF);
+static void prop_ghost(uint8_t* out);
+// ret = the hook's return address (client_cursor's call of the ghost is told by it)
+static uint8_t* cursor_xf_body(uint8_t* out, uint8_t* sys, uint8_t* q, uint8_t* ray, uint8_t* ret) {
     uint8_t* r = PROF_CALL(PF_CXF_G, g_cxOrig(out, sys, q, ray));
-    if (out && q && g_cxClientRet && (uint8_t*)__builtin_return_address(0) == g_cxClientRet) obj_ghost(out, q);
-    if (out && sys && q && q[3] != 4 && prop_now() && g_cxClientRet && (uint8_t*)__builtin_return_address(0) == g_cxClientRet) {
+    if (out && sys && q && q[3] != 4 && prop_now() && g_cxClientRet && ret == g_cxClientRet) {
         // an object in hand: the camera for the drawn path (the building cursor is not running)
         const DWORD now = GetTickCount();
         cam_ring_push(sys, (const int64_t*)(sys + 0x640), (const float*)(sys + 0x658), now);
@@ -1228,6 +1274,14 @@ static uint8_t* cursor_xf_hook(uint8_t* out, uint8_t* sys, uint8_t* q, uint8_t* 
     for (int a = 0; a < 3; a++) pos[a] = round_grid((double)cam[a] + (double)f[a] * dist * M, grid);
     for (int k = 0; k < 4; k++) rot[k] = g_lastRot[k];
     out[0x28] = 1;
+    return r;
+}
+static uint8_t* cursor_xf_hook(uint8_t* out, uint8_t* sys, uint8_t* q, uint8_t* ray) {
+    PROF(PF_CXF);
+    uint8_t* ret = (uint8_t*)__builtin_return_address(0);
+    uint8_t* r = cursor_xf_body(out, sys, q, ray, ret);
+    // the held object's ghost: the exact rotation and nudge on top (props.h), then objects.h reads it
+    if (out && q && g_cxClientRet && ret == g_cxClientRet) { prop_ghost(out); obj_ghost(out, q); }
     return r;
 }
 
@@ -3714,6 +3768,9 @@ static void remote_clicks(uint8_t* src, uint8_t flags) {
     remote_corner(rise & 1 ? OP_BUILD : OP_REMOVE, item, (const CursorXf*)(src + 0x2f8), (const CursorXf*)(src + 0x330));
 }
 
+struct PropSent { bool on; CursorXf saved[2]; };   // the cursors as they were before props.h moved them
+static void prop_encode_begin(uint8_t* src, uint8_t flags, PropSent* ps);
+static void prop_encode_end(uint8_t* src, const PropSent* ps);
 static uint64_t input_encode_hook(uint8_t* out, uint8_t* src, uint8_t* flags, uint64_t a4) {
     PROF(PF_INPUT);
     uint8_t* item = flags && (*flags & 1) && !g_modOff && src && (building_now() || GetTickCount() - g_liveItemTick < 500) ? building_item() : nullptr;
@@ -3738,6 +3795,8 @@ static uint64_t input_encode_hook(uint8_t* out, uint8_t* src, uint8_t* flags, ui
         exPatch = true;
         LOG(.str("exact: click ").i(g_exactPhase + 1).str(" sent at (").fix(x.pos[0]).c(',').fix(x.pos[1]).c(',').fix(x.pos[2]).c(')'));
     }
+    PropSent ps;                                        // the object in hand: its exact rotation and nudge go out too
+    prop_encode_begin(src, flags ? *flags : 0, &ps);
     uint64_t r = PROF_CALL(PF_INPUT_G, g_inputEncodeOrig(out, src, flags, a4));
     if (out && src) {
         const uint64_t prev = g_prevDigital;
@@ -3749,6 +3808,7 @@ static uint64_t input_encode_hook(uint8_t* out, uint8_t* src, uint8_t* flags, ui
         LeaveCriticalSection(&g_stateLock);
         core::net_pack(st, (int64_t*)out);
     }
+    prop_encode_end(src, &ps);
     if (exPatch) { *(CursorXf*)(src + 0x2f8) = exSaved[0]; *(CursorXf*)(src + 0x330) = exSaved[1]; }
     if (patch) *(CursorXf*)(src + 0x330) = saved;
     return r;
@@ -4184,7 +4244,10 @@ static int* const g_allKeys[] = { &g_cfg.keyStructure, &g_cfg.keyReplace, &g_cfg
                                   &g_cfg.keyReplaceHold, &g_cfg.keyPrefab, &g_cfg.keyAreaOn, &g_cfg.keyReplaceOn, &g_cfg.keyReplaceOff,
                                   &g_cfg.keyFillRoof, &g_cfg.keyRoofTurn, &g_cfg.keyRoofShape,
                                   &g_cfg.keyThick, &g_cfg.keyOverhang, &g_cfg.keyFillRound, &g_cfg.keyRoundHollow, &g_cfg.keyRoundLying,
-                                  &g_cfg.keyFillDiag, &g_cfg.keyExact, &g_cfg.keyObjUndo };
+                                  &g_cfg.keyFillDiag, &g_cfg.keyExact, &g_cfg.keyObjUndo,
+                                  &g_cfg.keyPropTurnP, &g_cfg.keyPropTurnM, &g_cfg.keyPropTiltP, &g_cfg.keyPropTiltM,
+                                  &g_cfg.keyPropRollP, &g_cfg.keyPropRollM, &g_cfg.keyPropXP, &g_cfg.keyPropXM,
+                                  &g_cfg.keyPropYP, &g_cfg.keyPropYM, &g_cfg.keyPropZP, &g_cfg.keyPropZM, &g_cfg.keyPropReset };
 // Down with exactly its modifiers. A key without modifiers ignores held modifiers (Shift
 // while sprinting), unless another setting uses the same key with the held ones.
 static bool key_down(int code) {
@@ -4373,6 +4436,8 @@ enum {
     ACT_CREATIVE, ACT_PREFAB, ACT_AREA_ON, ACT_REPLACE_ON, ACT_REPLACE_OFF, ACT_FILL_ROOF, ACT_ROOF_TURN, ACT_ROOF_SHAPE,
     ACT_THICK, ACT_OVERHANG, ACT_FILL_ROUND, ACT_ROUND_HOLLOW, ACT_ROUND_LYING, ACT_FILL_DIAG, ACT_EXACT,
     ACT_OBJ_MODE, ACT_OBJ_MENU, ACT_BP, ACT_BP_SUB,
+    ACT_PROP_TURN_P, ACT_PROP_TURN_M, ACT_PROP_TILT_P, ACT_PROP_TILT_M, ACT_PROP_ROLL_P, ACT_PROP_ROLL_M,   // object in hand (props.h)
+    ACT_PROP_X_P, ACT_PROP_X_M, ACT_PROP_Y_P, ACT_PROP_Y_M, ACT_PROP_Z_P, ACT_PROP_Z_M, ACT_PROP_RESET,
     ACT_KEYED,          // the actions above have their own key
     ACT_MENU = ACT_KEYED,             // the wheel's menu entry (the menu key is handled with the menu)
     ACT_OBJ_CLEAR,                    // the wheel's "clear points" of object placement
@@ -4386,6 +4451,8 @@ static int* const kActKey[ACT_KEYED] = {
     &g_cfg.keyFillRoof, &g_cfg.keyRoofTurn, &g_cfg.keyRoofShape, &g_cfg.keyThick, &g_cfg.keyOverhang,
     &g_cfg.keyFillRound, &g_cfg.keyRoundHollow, &g_cfg.keyRoundLying, &g_cfg.keyFillDiag, &g_cfg.keyExact,
     &g_cfg.keyObjMode, &g_cfg.keyObjMenu, &g_cfg.keyBlueprint, &g_cfg.keyBpSub,
+    &g_cfg.keyPropTurnP, &g_cfg.keyPropTurnM, &g_cfg.keyPropTiltP, &g_cfg.keyPropTiltM, &g_cfg.keyPropRollP, &g_cfg.keyPropRollM,
+    &g_cfg.keyPropXP, &g_cfg.keyPropXM, &g_cfg.keyPropYP, &g_cfg.keyPropYM, &g_cfg.keyPropZP, &g_cfg.keyPropZM, &g_cfg.keyPropReset,
 };
 static volatile LONG g_menuReq = 0;                 // 1 = open, 2 = close (input thread -> UI thread)
 static volatile LONG g_offReq = 0;                  // the Options page switched the whole mod off
@@ -4427,7 +4494,7 @@ static bool act_allowed(int a) {
     case ACT_PREFAB: case ACT_AREA_ON: case ACT_THICK: case ACT_EXACT: return g_cfg.toolArea != 0;
     case ACT_OBJ_MODE: case ACT_OBJ_MENU: case ACT_OBJ_CLEAR: return g_cfg.toolObjects != 0;
     case ACT_BP: case ACT_BP_SUB: return g_cfg.toolBlueprint != 0;
-    default: return true;
+    default: return a >= ACT_PROP_TURN_P && a <= ACT_PROP_RESET ? g_cfg.toolObjects != 0 : true;
     }
 }
 // A tool switched off: its state back to the game's.
@@ -4439,11 +4506,13 @@ static void tools_apply() {
     if (!g_cfg.toolFree && g_hover) set_hover(0);
 }
 static void obj_act(int a);
+static void prop_act(int a);
 static bool prop_now();
 static void obj_clear(const char* why);
 static void do_act(int a) {
     if (!act_allowed(a)) return;
     if (a == ACT_OBJ_MODE || a == ACT_OBJ_MENU || a == ACT_OBJ_CLEAR) { obj_act(a); return; }
+    if (a >= ACT_PROP_TURN_P && a <= ACT_PROP_RESET) { prop_act(a); return; }
     if (a == ACT_CLEAR && prop_now()) { obj_act(ACT_OBJ_CLEAR); return; }
     switch (a) {
     case ACT_BP: case ACT_BP_SUB: {
@@ -4889,6 +4958,19 @@ static KeyAction g_keyActions[] = {
     { S_ACT_OBJ_MODE, &g_cfg.keyObjMode, 0 },
     { S_ACT_OBJ_MENU, &g_cfg.keyObjMenu, 0 },
     { S_ACT_OBJ_UNDO, &g_cfg.keyObjUndo, 0 },
+    { S_ACT_PROP_TURN_P, &g_cfg.keyPropTurnP, 0 },
+    { S_ACT_PROP_TURN_M, &g_cfg.keyPropTurnM, 0 },
+    { S_ACT_PROP_TILT_P, &g_cfg.keyPropTiltP, 0 },
+    { S_ACT_PROP_TILT_M, &g_cfg.keyPropTiltM, 0 },
+    { S_ACT_PROP_ROLL_P, &g_cfg.keyPropRollP, 0 },
+    { S_ACT_PROP_ROLL_M, &g_cfg.keyPropRollM, 0 },
+    { S_ACT_PROP_X_P, &g_cfg.keyPropXP, 0 },
+    { S_ACT_PROP_X_M, &g_cfg.keyPropXM, 0 },
+    { S_ACT_PROP_Y_P, &g_cfg.keyPropYP, 0 },
+    { S_ACT_PROP_Y_M, &g_cfg.keyPropYM, 0 },
+    { S_ACT_PROP_Z_P, &g_cfg.keyPropZP, 0 },
+    { S_ACT_PROP_Z_M, &g_cfg.keyPropZM, 0 },
+    { S_ACT_PROP_RESET, &g_cfg.keyPropReset, 0 },
     { S_ACT_CLEAR, &g_cfg.keyCancel, 0 },
     { S_ACT_FREE, &g_cfg.keyHover, 0 },
     { S_ACT_FARTHER, &g_cfg.keyFarther, 0 },
@@ -5330,6 +5412,7 @@ static void draw_exact_window() {
 }
 
 #include "objects.h"
+#include "props.h"
 #include "blueprint_ui.h"
 
 static void mod_screen_hook(void*, void*, void*, void*) {
@@ -5512,6 +5595,8 @@ static bool hud_info(char* out, int cap) {
             else b.str(": ").fmt(T(S_FLOAT_SIZE), num(pl.count[0]).s, num(pl.count[2]).s, num(pl.count[1]).s, num(n).s);
         }
     } else if (!g_modOff && obj_hud_info(b)) {
+        prop_hud_info(b);
+    } else if (!g_modOff && prop_hud_info(b)) {
     } else return false;
     copy_text(out, b.z(), cap);
     return true;
@@ -6008,8 +6093,11 @@ static void exact_fire(bool focus) {
     }
 }
 
+static bool prop_repeats(int a);
+static void prop_save_tick();
 static DWORD WINAPI input_thread(void*) {
     bool prev[ACT_KEYED] = {}, prevOff = false, prevMenu = false, prevEsc = false;
+    DWORD downAt[ACT_KEYED] = {};
     for (;;) {
         Sleep(15);
         if (!g_active) continue;
@@ -6104,10 +6192,13 @@ static DWORD WINAPI input_thread(void*) {
             int code = act_allowed(k) ? *kActKey[k] : 0;
             if ((k == ACT_FARTHER || k == ACT_CLOSER) && !g_hover) code = 0;
             if ((k == ACT_ROOF_TURN && !shape_turn_on()) || (k == ACT_ROOF_SHAPE && !shape_on())) code = 0;   // R stays the game's key otherwise
+            if (k >= ACT_PROP_TURN_P && k <= ACT_PROP_RESET && !prop_now()) code = 0;   // only with an object in hand
             bool down = focus && key_down(code);
-            if (down && !prev[k]) do_act(k);
+            if (down && !prev[k]) { do_act(k); downAt[k] = GetTickCount(); }
+            else if (down && prop_repeats(k) && GetTickCount() - downAt[k] > 400) { do_act(k); downAt[k] = GetTickCount() - 300; }   // held: a step every 0.1 s
             prev[k] = down;
         }
+        prop_save_tick();
     }
 }
 

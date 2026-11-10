@@ -1092,5 +1092,49 @@ inline void bp_unturn(int r, int ri, int rk, int nx, int nz, int* i, int* k) {
     default: *i = nx - 1 - rk; *k = ri; break;
     }
 }
+// ---- exact rotation and nudge of the object in hand (props.h)
+// Turn (about the object's up axis y), tilt (about its x) and roll (about its z) in degrees, in
+// that order on top of the held rotation; the nudge in cm along the object's axes (after the
+// turns) or the world's.
+struct PropXf { int turn, tilt, roll; int nudge[3]; int world; };
+inline bool prop_xf_on(const PropXf& x) { return x.turn || x.tilt || x.roll || x.nudge[0] || x.nudge[1] || x.nudge[2]; }
+// a * b (x, y, z, w): b turns in a's frame
+inline void quat_mul(const double* a, const double* b, double* out) {
+    out[0] = a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1];
+    out[1] = a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0];
+    out[2] = a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3];
+    out[3] = a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2];
+}
+// v turned by the unit quaternion q
+inline void quat_apply(const double* q, const double* v, double* out) {
+    // t = 2 (q.xyz x v), out = v + w t + q.xyz x t
+    double t[3] = { 2 * (q[1] * v[2] - q[2] * v[1]), 2 * (q[2] * v[0] - q[0] * v[2]), 2 * (q[0] * v[1] - q[1] * v[0]) };
+    out[0] = v[0] + q[3] * t[0] + (q[1] * t[2] - q[2] * t[1]);
+    out[1] = v[1] + q[3] * t[1] + (q[2] * t[0] - q[0] * t[2]);
+    out[2] = v[2] + q[3] * t[2] + (q[0] * t[1] - q[1] * t[0]);
+}
+// The held transform (position fixed point, rotation) with the turns and the nudge.
+inline void prop_apply(const PropXf& x, const int64_t* pos, const float* rot, int64_t* outPos, float* outRot) {
+    double q[4] = { rot[0], rot[1], rot[2], rot[3] };
+    double n = d_sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+    if (n < 1e-6) { q[0] = q[1] = q[2] = 0; q[3] = 1; } else for (int k = 0; k < 4; k++) q[k] /= n;
+    const double ang[3] = { x.turn * kPi / 180, x.tilt * kPi / 180, x.roll * kPi / 180 };
+    const int axis[3] = { 1, 0, 2 };                          // turn y, tilt x, roll z
+    for (int k = 0; k < 3; k++) {
+        if (!ang[k]) continue;
+        double r[4] = { 0, 0, 0, d_cos(ang[k] * 0.5) }, t[4];
+        r[axis[k]] = d_sin(ang[k] * 0.5);
+        quat_mul(q, r, t);
+        for (int i = 0; i < 4; i++) q[i] = t[i];
+    }
+    n = d_sqrt(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
+    for (int k = 0; k < 4; k++) outRot[k] = (float)(q[k] / n);
+    double v[3] = { x.nudge[0] / 100.0, x.nudge[1] / 100.0, x.nudge[2] / 100.0 }, w[3];
+    if (x.world) for (int k = 0; k < 3; k++) w[k] = v[k];
+    else quat_apply(q, v, w);
+    for (int k = 0; k < 3; k++) outPos[k] = pos[k] + (int64_t)(w[k] * kFix + (w[k] < 0 ? -0.5 : 0.5));
+}
+// degrees kept in -179..180 (keys step past the half turn)
+inline int prop_wrap_deg(int d) { d %= 360; if (d > 180) d -= 360; if (d <= -180) d += 360; return d; }
 
 } // namespace core

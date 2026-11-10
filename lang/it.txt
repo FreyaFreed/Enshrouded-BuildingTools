@@ -363,3 +363,35 @@ bp.have_unknown = ?
 bp.stock_hint = ? = non ancora noto: apri una volta la scelta del materiale
 bp.short = Non abbastanza di {0} materiali: si può costruire solo una parte
 bp.objects_later = Si salvano anche gli oggetti: ciò che si usa (porte, bauli, letti, banchi), ciò che dà comfort (mobili, luci) e le scale.
+
+# Object placement (an object in hand)
+obj.xf_title = Rotazione esatta e spostamento (anche su un server)
+obj.xf_help = In aggiunta alla rotazione del gioco. Tasti nella pagina Tasti; tieni premuto Ctrl per passi di 1.
+obj.xf_turn = Ruota attorno al suo asse verticale (gradi)
+obj.xf_tilt = Inclina attorno al suo asse X (gradi)
+obj.xf_roll = Rolla attorno al suo asse Z (gradi)
+obj.xf_nudge_x = Sposta X (cm)
+obj.xf_nudge_y = Sposta Y, in alto (cm)
+obj.xf_nudge_z = Sposta Z (cm)
+obj.xf_axes = Sposta lungo
+obj.xf_axes_object = Gli assi dell'oggetto (ruotati con esso)
+obj.xf_axes_world = Gli assi del mondo
+obj.xf_turn_step = Una pressione ruota di (gradi)
+obj.xf_nudge_step = Una pressione sposta di (cm)
+obj.xf_reset = Azzera rotazione e spostamento
+obj.xf_reset_msg = Rotazione e spostamento dell'oggetto azzerati
+obj.xf_float_rot = Ruota {0}, inclina {1}, rolla {2} gradi
+obj.xf_float_nudge = spostamento {0} / {1} / {2} cm
+obj.key_turn_plus = Oggetto in mano: ruota +
+obj.key_turn_minus = Oggetto in mano: ruota -
+obj.key_tilt_plus = Oggetto in mano: inclina +
+obj.key_tilt_minus = Oggetto in mano: inclina -
+obj.key_roll_plus = Oggetto in mano: rolla +
+obj.key_roll_minus = Oggetto in mano: rolla -
+obj.key_nudge_x_plus = Oggetto in mano: sposta X +
+obj.key_nudge_x_minus = Oggetto in mano: sposta X -
+obj.key_nudge_up = Oggetto in mano: sposta in alto
+obj.key_nudge_down = Oggetto in mano: sposta in basso
+obj.key_nudge_z_plus = Oggetto in mano: sposta Z +
+obj.key_nudge_z_minus = Oggetto in mano: sposta Z -
+obj.key_xf_reset = Oggetto in mano: azzera rotazione e spostamento

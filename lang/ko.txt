@@ -363,3 +363,35 @@ bp.have_unknown = ?
 bp.stock_hint = ? = 아직 모름: 재료 선택을 한 번 여세요
 bp.short = 재료 {0}종 부족: 일부만 지을 수 있습니다
 bp.objects_later = 물건도 저장됩니다: 사용할 수 있는 것(문, 상자, 침대, 작업대), 안락함을 주는 것(가구, 조명), 사다리.
+
+# Object placement (an object in hand)
+obj.xf_title = 정확한 회전과 미세 이동 (서버 참가 시에도)
+obj.xf_help = 게임의 회전에 더해집니다. 키는 키 페이지에서; Ctrl을 누르면 1씩.
+obj.xf_turn = 위쪽 축으로 회전 (도)
+obj.xf_tilt = X축으로 기울이기 (도)
+obj.xf_roll = Z축으로 롤 (도)
+obj.xf_nudge_x = X 이동 (cm)
+obj.xf_nudge_y = Y 이동, 위로 (cm)
+obj.xf_nudge_z = Z 이동 (cm)
+obj.xf_axes = 이동 기준
+obj.xf_axes_object = 오브젝트의 축 (함께 회전)
+obj.xf_axes_world = 월드의 축
+obj.xf_turn_step = 키 한 번에 회전 (도)
+obj.xf_nudge_step = 키 한 번에 이동 (cm)
+obj.xf_reset = 회전과 이동 초기화
+obj.xf_reset_msg = 오브젝트 회전과 이동 초기화됨
+obj.xf_float_rot = 회전 {0}, 기울기 {1}, 롤 {2}도
+obj.xf_float_nudge = 이동 {0} / {1} / {2} cm
+obj.key_turn_plus = 손에 든 오브젝트: 회전 +
+obj.key_turn_minus = 손에 든 오브젝트: 회전 -
+obj.key_tilt_plus = 손에 든 오브젝트: 기울기 +
+obj.key_tilt_minus = 손에 든 오브젝트: 기울기 -
+obj.key_roll_plus = 손에 든 오브젝트: 롤 +
+obj.key_roll_minus = 손에 든 오브젝트: 롤 -
+obj.key_nudge_x_plus = 손에 든 오브젝트: X 이동 +
+obj.key_nudge_x_minus = 손에 든 오브젝트: X 이동 -
+obj.key_nudge_up = 손에 든 오브젝트: 위로 이동
+obj.key_nudge_down = 손에 든 오브젝트: 아래로 이동
+obj.key_nudge_z_plus = 손에 든 오브젝트: Z 이동 +
+obj.key_nudge_z_minus = 손에 든 오브젝트: Z 이동 -
+obj.key_xf_reset = 손에 든 오브젝트: 회전과 이동 초기화

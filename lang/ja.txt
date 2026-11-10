@@ -363,3 +363,35 @@ bp.have_unknown = ?
 bp.stock_hint = ? = まだ不明：素材選択を一度開いてください
 bp.short = 素材 {0} 種類が不足：一部だけ建てられます
 bp.objects_later = オブジェクトも保存されます：使える物（ドア、チェスト、ベッド、作業台）、快適さを与える物（家具、照明）、はしご。
+
+# Object placement (an object in hand)
+obj.xf_title = 正確な回転と微調整（サーバー参加時も）
+obj.xf_help = ゲームの回転に追加されます。キーはキーページで設定。Ctrlを押しながらで1ずつ。
+obj.xf_turn = 上方向の軸で回転（度）
+obj.xf_tilt = X軸で傾け（度）
+obj.xf_roll = Z軸でロール（度）
+obj.xf_nudge_x = X方向に移動（cm）
+obj.xf_nudge_y = Y方向（上）に移動（cm）
+obj.xf_nudge_z = Z方向に移動（cm）
+obj.xf_axes = 移動の基準
+obj.xf_axes_object = オブジェクトの軸（一緒に回転）
+obj.xf_axes_world = ワールドの軸
+obj.xf_turn_step = 1回のキーで回転（度）
+obj.xf_nudge_step = 1回のキーで移動（cm）
+obj.xf_reset = 回転と移動をリセット
+obj.xf_reset_msg = オブジェクトの回転と移動をリセットしました
+obj.xf_float_rot = 回転 {0}、傾き {1}、ロール {2} 度
+obj.xf_float_nudge = 移動 {0} / {1} / {2} cm
+obj.key_turn_plus = 手に持ったオブジェクト：回転 +
+obj.key_turn_minus = 手に持ったオブジェクト：回転 -
+obj.key_tilt_plus = 手に持ったオブジェクト：傾き +
+obj.key_tilt_minus = 手に持ったオブジェクト：傾き -
+obj.key_roll_plus = 手に持ったオブジェクト：ロール +
+obj.key_roll_minus = 手に持ったオブジェクト：ロール -
+obj.key_nudge_x_plus = 手に持ったオブジェクト：X移動 +
+obj.key_nudge_x_minus = 手に持ったオブジェクト：X移動 -
+obj.key_nudge_up = 手に持ったオブジェクト：上へ移動
+obj.key_nudge_down = 手に持ったオブジェクト：下へ移動
+obj.key_nudge_z_plus = 手に持ったオブジェクト：Z移動 +
+obj.key_nudge_z_minus = 手に持ったオブジェクト：Z移動 -
+obj.key_xf_reset = 手に持ったオブジェクト：回転と移動をリセット

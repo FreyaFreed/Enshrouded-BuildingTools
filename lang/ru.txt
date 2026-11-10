@@ -363,3 +363,35 @@ bp.have_unknown = ?
 bp.stock_hint = ? = пока неизвестно: откройте выбор материала один раз
 bp.short = Не хватает материалов ({0}): можно построить только часть
 bp.objects_later = Сохраняются и объекты: то, чем можно пользоваться (двери, сундуки, кровати, станки), что даёт комфорт (мебель, свет), и лестницы.
+
+# Object placement (an object in hand)
+obj.xf_title = Точный поворот и сдвиг (и при входе на сервер)
+obj.xf_help = Добавляется к повороту игры. Клавиши на странице «Клавиши»; с Ctrl шаг 1.
+obj.xf_turn = Поворот вокруг своей вертикальной оси (градусы)
+obj.xf_tilt = Наклон вокруг своей оси X (градусы)
+obj.xf_roll = Крен вокруг своей оси Z (градусы)
+obj.xf_nudge_x = Сдвиг по X (см)
+obj.xf_nudge_y = Сдвиг по Y, вверх (см)
+obj.xf_nudge_z = Сдвиг по Z (см)
+obj.xf_axes = Сдвигать вдоль
+obj.xf_axes_object = Осей объекта (повёрнутых вместе с ним)
+obj.xf_axes_world = Осей мира
+obj.xf_turn_step = Одно нажатие поворачивает на (градусы)
+obj.xf_nudge_step = Одно нажатие сдвигает на (см)
+obj.xf_reset = Сбросить поворот и сдвиг
+obj.xf_reset_msg = Поворот и сдвиг объекта сброшены
+obj.xf_float_rot = Поворот {0}, наклон {1}, крен {2} градусов
+obj.xf_float_nudge = сдвиг {0} / {1} / {2} см
+obj.key_turn_plus = Объект в руке: поворот +
+obj.key_turn_minus = Объект в руке: поворот -
+obj.key_tilt_plus = Объект в руке: наклон +
+obj.key_tilt_minus = Объект в руке: наклон -
+obj.key_roll_plus = Объект в руке: крен +
+obj.key_roll_minus = Объект в руке: крен -
+obj.key_nudge_x_plus = Объект в руке: сдвиг по X +
+obj.key_nudge_x_minus = Объект в руке: сдвиг по X -
+obj.key_nudge_up = Объект в руке: сдвиг вверх
+obj.key_nudge_down = Объект в руке: сдвиг вниз
+obj.key_nudge_z_plus = Объект в руке: сдвиг по Z +
+obj.key_nudge_z_minus = Объект в руке: сдвиг по Z -
+obj.key_xf_reset = Объект в руке: сбросить поворот и сдвиг

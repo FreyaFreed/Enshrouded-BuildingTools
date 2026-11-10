@@ -351,7 +351,38 @@
     X(S_BP_MAT_UNKNOWN, "bp.have_unknown", "?") \
     X(S_BP_STOCK_HINT, "bp.stock_hint", "? = not known yet: open the material picker once") \
     X(S_BP_SHORT, "bp.short", "Not enough of {0} materials: only part can be built") \
-    X(S_BP_OBJECTS_LATER, "bp.objects_later", "Objects are saved too: what you can use (doors, chests, beds, stations), what gives comfort (furniture, lights) and ladders.")
+    X(S_BP_OBJECTS_LATER, "bp.objects_later", "Objects are saved too: what you can use (doors, chests, beds, stations), what gives comfort (furniture, lights) and ladders.") \
+    /* exact rotation and nudge of the object in hand (props.h) */ \
+    X(S_PROP_TITLE, "obj.xf_title", "Exact rotation and nudge (also when you join a server)") \
+    X(S_PROP_HELP, "obj.xf_help", "On top of the game's rotation. Keys on the Keys page; hold Ctrl for steps of 1.") \
+    X(S_PROP_TURN, "obj.xf_turn", "Turn about its up axis (degrees)") \
+    X(S_PROP_TILT, "obj.xf_tilt", "Tilt about its X axis (degrees)") \
+    X(S_PROP_ROLL, "obj.xf_roll", "Roll about its Z axis (degrees)") \
+    X(S_PROP_NUDGE_X, "obj.xf_nudge_x", "Nudge X (cm)") \
+    X(S_PROP_NUDGE_Y, "obj.xf_nudge_y", "Nudge Y, up (cm)") \
+    X(S_PROP_NUDGE_Z, "obj.xf_nudge_z", "Nudge Z (cm)") \
+    X(S_PROP_AXES, "obj.xf_axes", "Nudge along") \
+    X(S_PROP_AXES_OBJECT, "obj.xf_axes_object", "The object's axes (turned with it)") \
+    X(S_PROP_AXES_WORLD, "obj.xf_axes_world", "The world's axes") \
+    X(S_PROP_TURN_STEP, "obj.xf_turn_step", "One key press turns (degrees)") \
+    X(S_PROP_NUDGE_STEP, "obj.xf_nudge_step", "One key press nudges (cm)") \
+    X(S_PROP_RESET, "obj.xf_reset", "Reset rotation and nudge") \
+    X(S_PROP_RESET_MSG, "obj.xf_reset_msg", "Object rotation and nudge reset") \
+    X(S_PROP_FLOAT_ROT, "obj.xf_float_rot", "Turn {0}, tilt {1}, roll {2} degrees") \
+    X(S_PROP_FLOAT_NUDGE, "obj.xf_float_nudge", "nudge {0} / {1} / {2} cm") \
+    X(S_ACT_PROP_TURN_P, "obj.key_turn_plus", "Object in hand: turn +") \
+    X(S_ACT_PROP_TURN_M, "obj.key_turn_minus", "Object in hand: turn -") \
+    X(S_ACT_PROP_TILT_P, "obj.key_tilt_plus", "Object in hand: tilt +") \
+    X(S_ACT_PROP_TILT_M, "obj.key_tilt_minus", "Object in hand: tilt -") \
+    X(S_ACT_PROP_ROLL_P, "obj.key_roll_plus", "Object in hand: roll +") \
+    X(S_ACT_PROP_ROLL_M, "obj.key_roll_minus", "Object in hand: roll -") \
+    X(S_ACT_PROP_X_P, "obj.key_nudge_x_plus", "Object in hand: nudge X +") \
+    X(S_ACT_PROP_X_M, "obj.key_nudge_x_minus", "Object in hand: nudge X -") \
+    X(S_ACT_PROP_Y_P, "obj.key_nudge_up", "Object in hand: nudge up") \
+    X(S_ACT_PROP_Y_M, "obj.key_nudge_down", "Object in hand: nudge down") \
+    X(S_ACT_PROP_Z_P, "obj.key_nudge_z_plus", "Object in hand: nudge Z +") \
+    X(S_ACT_PROP_Z_M, "obj.key_nudge_z_minus", "Object in hand: nudge Z -") \
+    X(S_ACT_PROP_RESET, "obj.key_xf_reset", "Object in hand: reset rotation and nudge")
 
 enum Str {
 #define BT_STR_ID(id, key, en) id,

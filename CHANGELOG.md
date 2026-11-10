@@ -3,6 +3,17 @@
 Each `## x.y.z` section is used as the release notes on GitHub and as the file
 changelog on Nexus Mods, so keep it short and written for players.
 
+## 0.31.2-props1 (fork test build)
+
+- **Exact rotation and nudge for objects** (an object in hand: chair, torch, plant...).
+  Turn, tilt and roll in degrees on top of the game's own rotation, and a nudge in cm
+  along the object's own axes or the world's. Works in a world you host and **also when
+  you join a dedicated server**: the server places an object where your game's ghost is,
+  so the server needs nothing new. Keys while an object is in hand: numpad 4 / 6 turn,
+  8 / 2 tilt, 7 / 9 roll, arrows nudge X and Z, numpad + / - nudge up and down, numpad 5
+  resets; one press is 15 degrees or 5 cm (both settable), with Ctrl 1. The same values,
+  the steps and the axes are in the Object settings window (Caps Lock wheel). The
+  settings stay until you reset them, and the text under the crosshair shows them.
 ## 0.33.0
 
 - **Shroudforge**: a second download, "Building Tools for Shroudforge", for players who use

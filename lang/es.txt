@@ -363,3 +363,35 @@ bp.have_unknown = ?
 bp.stock_hint = ? = aún desconocido: abre una vez el selector de material
 bp.short = Faltan {0} materiales: solo se puede construir una parte
 bp.objects_later = También se guardan objetos: lo que se usa (puertas, cofres, camas, mesas de trabajo), lo que da confort (muebles, luces) y escaleras.
+
+# Object placement (an object in hand)
+obj.xf_title = Rotación exacta y desplazamiento (también en un servidor)
+obj.xf_help = Se suman a la rotación del juego. Teclas en la página Teclas; mantén Ctrl para pasos de 1.
+obj.xf_turn = Girar sobre su eje vertical (grados)
+obj.xf_tilt = Inclinar sobre su eje X (grados)
+obj.xf_roll = Rodar sobre su eje Z (grados)
+obj.xf_nudge_x = Desplazar X (cm)
+obj.xf_nudge_y = Desplazar Y, hacia arriba (cm)
+obj.xf_nudge_z = Desplazar Z (cm)
+obj.xf_axes = Desplazar según
+obj.xf_axes_object = Los ejes del objeto (girados con él)
+obj.xf_axes_world = Los ejes del mundo
+obj.xf_turn_step = Una pulsación gira (grados)
+obj.xf_nudge_step = Una pulsación desplaza (cm)
+obj.xf_reset = Restablecer rotación y desplazamiento
+obj.xf_reset_msg = Rotación y desplazamiento del objeto restablecidos
+obj.xf_float_rot = Girar {0}, inclinar {1}, rodar {2} grados
+obj.xf_float_nudge = desplazamiento {0} / {1} / {2} cm
+obj.key_turn_plus = Objeto en la mano: girar +
+obj.key_turn_minus = Objeto en la mano: girar -
+obj.key_tilt_plus = Objeto en la mano: inclinar +
+obj.key_tilt_minus = Objeto en la mano: inclinar -
+obj.key_roll_plus = Objeto en la mano: rodar +
+obj.key_roll_minus = Objeto en la mano: rodar -
+obj.key_nudge_x_plus = Objeto en la mano: desplazar X +
+obj.key_nudge_x_minus = Objeto en la mano: desplazar X -
+obj.key_nudge_up = Objeto en la mano: desplazar hacia arriba
+obj.key_nudge_down = Objeto en la mano: desplazar hacia abajo
+obj.key_nudge_z_plus = Objeto en la mano: desplazar Z +
+obj.key_nudge_z_minus = Objeto en la mano: desplazar Z -
+obj.key_xf_reset = Objeto en la mano: restablecer rotación y desplazamiento

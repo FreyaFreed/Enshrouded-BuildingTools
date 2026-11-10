@@ -363,3 +363,35 @@ bp.have_unknown = ?
 bp.stock_hint = ? = jeszcze nieznane: otwórz raz wybór materiału
 bp.short = Brakuje materiałów ({0}): da się zbudować tylko część
 bp.objects_later = Zapisywane są też obiekty: to, czego można używać (drzwi, skrzynie, łóżka, stanowiska), co daje komfort (meble, światła) i drabiny.
+
+# Object placement (an object in hand)
+obj.xf_title = Dokładny obrót i przesunięcie (także na serwerze)
+obj.xf_help = Dodawane do obrotu gry. Klawisze na stronie Sterowanie; przytrzymaj Ctrl, by zmieniać o 1.
+obj.xf_turn = Obrót wokół własnej osi pionowej (stopnie)
+obj.xf_tilt = Pochylenie wokół własnej osi X (stopnie)
+obj.xf_roll = Przechył wokół własnej osi Z (stopnie)
+obj.xf_nudge_x = Przesunięcie X (cm)
+obj.xf_nudge_y = Przesunięcie Y, w górę (cm)
+obj.xf_nudge_z = Przesunięcie Z (cm)
+obj.xf_axes = Przesuwaj wzdłuż
+obj.xf_axes_object = Osi obiektu (obracanych z nim)
+obj.xf_axes_world = Osi świata
+obj.xf_turn_step = Jedno naciśnięcie obraca o (stopnie)
+obj.xf_nudge_step = Jedno naciśnięcie przesuwa o (cm)
+obj.xf_reset = Zeruj obrót i przesunięcie
+obj.xf_reset_msg = Obrót i przesunięcie obiektu wyzerowane
+obj.xf_float_rot = Obrót {0}, pochylenie {1}, przechył {2} stopni
+obj.xf_float_nudge = przesunięcie {0} / {1} / {2} cm
+obj.key_turn_plus = Obiekt w ręce: obrót +
+obj.key_turn_minus = Obiekt w ręce: obrót -
+obj.key_tilt_plus = Obiekt w ręce: pochylenie +
+obj.key_tilt_minus = Obiekt w ręce: pochylenie -
+obj.key_roll_plus = Obiekt w ręce: przechył +
+obj.key_roll_minus = Obiekt w ręce: przechył -
+obj.key_nudge_x_plus = Obiekt w ręce: przesuń X +
+obj.key_nudge_x_minus = Obiekt w ręce: przesuń X -
+obj.key_nudge_up = Obiekt w ręce: przesuń w górę
+obj.key_nudge_down = Obiekt w ręce: przesuń w dół
+obj.key_nudge_z_plus = Obiekt w ręce: przesuń Z +
+obj.key_nudge_z_minus = Obiekt w ręce: przesuń Z -
+obj.key_xf_reset = Obiekt w ręce: zeruj obrót i przesunięcie
