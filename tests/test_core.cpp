@@ -61,7 +61,7 @@ static void binary_checks(const char* exe) {
         {"SIG_UI_DRAW_RECT", 0x11a7d30}, {"SIG_UI_DRAW_ROTATED", 0x11a8330}, {"SIG_UI_BOX_BLEND", 0x11c9b50},
         {"SIG_UI_SCROLL_PARAMS", 0xa3eeb0}, {"SIG_UI_SCROLL_BEGIN", 0xa3e020}, {"SIG_UI_SCROLL_END", 0xa40160},
         {"SIG_UI_SCROLL_SPEED", 0xd4e3e0}, {"SIG_PIECE_CHECK_CALL", 0x2d95d2}, {"SIG_UI_SETTING_OPTION_CALL", 0xc54c13},
-        {"SIG_TOGGLE_SCREEN", 0xd74850}, {"SIG_UI_SMALL_TOGGLE", 0xc37f29},
+        {"SIG_TOGGLE_SCREEN", 0xd74850}, {"SIG_UI_SMALL_TOGGLE", 0xc37f29}, {"SIG_PROP_CHECK_CALL", 0x2956f9},
     };
     bool allThere = true;
     for (auto& e : expect) allThere &= sigs.count(e.first) == 1;
@@ -108,6 +108,10 @@ static void binary_checks(const char* exe) {
     const uint8_t commitStolen[5] = {0x48,0x8B,0xC4,0x55,0x53};
     CHECK(!memcmp(&img[0x48e6f0], commitStolen, 5), "commit hook steals mov rax,rsp; push rbp; push rbx");
     CHECK(0x2d88f2 + 81 == 0x2d8943, "server branch sits directly before the placement call");
+    { auto rel = [&](uint32_t at) { return img[at] == 0xE8 ? at + 5 + *(int32_t*)&img[at + 1] : 0u; };
+      CHECK(rel(0x2956f9 + 0x17) == 0x2994d0 && rel(0x2956f9 + 0x57) == 0x2994d0 && 0x2956f9 - 0x29562b < 0x200,
+            "props: both placement check calls, after the cursor transform call");
+      CHECK(!memcmp(&img[0x2994d0], "\x48\x89\x5C\x24\x18\x4C\x89\x4C\x24\x20", 10), "props: placement check prologue"); }
     // call-site distance check used by the mod
     CHECK(0x2d8943 > 0x2d85fb && 0x2d8943 - 0x2d85fb < 0x400, "call-site layout check passes");
 

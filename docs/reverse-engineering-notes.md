@@ -900,7 +900,7 @@ the hotfix client shows every feature available.
 - Mod: SIG_PROP_UNDO_TEST (cave), SIG_PROP_REC_CALL, SIG_CAN_UNDO_CALL, SIG_BUILD_MODE_CALL,
   SIG_UNDO_KEY_CALL. The undo's refund call (SIG_PAY_UNDO) tells the key code the undo ran.
 
-## Exact rotation and nudge (fork 0.31.2-props1, Hotfix #5 RVAs)
+## Exact rotation and nudge (fork 0.31.2-props2, Hotfix #5 RVAs)
 
 - Server `player_building_place_prop` = c6280 in enshrouded_server.exe (client 2da2e0; the
   mod's SIG_PROP_PLACE_CALL, SIG_PROP_PAY_A / _B and SIG_PROP_UNDO_TEST match once in the
@@ -915,10 +915,26 @@ the hotfix client shows every feature available.
   It reads the latest input when the place animation's ChangeVoxel event runs, not the
   click's packet, so a transform patched only in the click's packet would be lost.
 - Client: client_cursor (294620) calls the cursor transform 2905c0 at 295626 with out =
-  rbp+0x350, then 2994d0 twice (rsi+0x10 and rsi+0x48, the cursor component's place and
-  aim) with out as an argument; 2994d0 checks the placement (valid flags at [r12]) and
-  stores the component's transform. Whether the stored rotation is the one in out was not
-  traced to the end: the input hook logs what goes out (moved already / moved here).
+  rbp+0x350, then the placement check 2994d0 twice: at 295710 (rcx = rsi+0x80 flags, rdx =
+  rsi+0x10 the place cursor, r8 = r13+0x398) and at 295750 (rsi+0x84, rsi+0x48 the aim,
+  r8 = 0); r9 = rsi+0xa0, stack args rsi+0xa4, rbp+0x3f0, the cursor transform rbp+0x350,
+  the item's placement settings rbp-0x80 (SIG_PROP_CHECK_CALL, 2956f9, covers the first
+  call; the second is 0x40 later).
+- For an object the cursor transform's +0x18 is the surface normal (x, y, z; +0x24 is not
+  part of it), not a rotation: 2994d0 tests |x|,|y|,|z| for zero (no surface: invalid) and,
+  with settings bytes +0x12 / +0x1a, snaps the normal to its largest axis. The rotation is
+  built fresh each frame: the game's own turn (three ints at [r15+0xc4/c8/cc]) to a
+  quaternion (f6da20), aligned to the normal (291010), sometimes snapped (28b840 /
+  28c0a0), stored at rdx+0x18; the position (+0, int64) is the cursor transform's, moved
+  along the rotation by the item's offset (byte [item+0x490]) when the item has one (that
+  is why the sent cursor sat 6 cm from the cursor transform's spot in the props1 logs).
+  Invalid states (flags 0x8000 / 0x8001) return without writing rdx. Nothing reads the
+  stored transform back before it is rewritten, so the mod can change it after the call.
+- props1 turned the normal (the object did not turn; with a nudge set, the nudge's
+  "object axes" were the normal read as a quaternion, a fixed 180-degree turn about up).
+  props2 changes 2994d0's result instead (prop_check_hook on both calls). Test round 1 log:
+  every click's cursor went out moved by the game itself ("neither ghost" against the
+  cursor transform, sent = moved spot + the item offset), and the nudge landed as shown.
 
 ## Hotfix #5 (1.0.1.2, build 1287369, 2026-11-04): no mod change
 

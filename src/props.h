@@ -4,14 +4,18 @@
 // How the game places an object (1.0.1.2 client and server, docs/reverse-engineering-notes.md): the
 // place_prop system takes the object's position and rotation from the player's place cursor, the
 // one the player's game sends with its input every frame (ClientPlayerInputData +0x2f8; on the
-// server PlayerInput +0x300, or the aim at +0x338 for some modes). It is the ghost client_cursor
-// works out each frame, so a dedicated server places the object wherever the client's ghost is.
+// server PlayerInput +0x300, or the aim at +0x338 for some modes). client_cursor works it out each
+// frame: the cursor transform (cursor_xf_hook) gives the spot and the surface normal (its +0x18 is
+// the normal, not a rotation), then the placement check 2994d0 turns that and the game's own turn
+// into the object's transform (int64 position, rotation quaternion at +0x18) and stores it, once
+// for the place cursor and once for the aim. So a dedicated server places the object wherever the
+// client's ghost is.
 //
-// The mod: the turns and the nudge are put on top of that ghost (cursor_xf_hook, client_cursor's
-// own call, the one objects.h reads), so the game draws, checks and sends the moved ghost. The input
-// encoder hook looks at the cursor that goes out and moves it there too when it is still the ghost
-// from before the move; the single player place hook does the same for the click. Which of them
-// moved it is logged, once a click.
+// The mod: the turns and the nudge are put on top of the placement check's transform (its two
+// calls in client_cursor), so the game draws and sends the moved ghost. The input encoder hook
+// looks at the cursor that goes out and moves it there too when it is still the ghost from before
+// the move; the single player place hook does the same for the click. Which of them moved it is
+// logged, once a click.
 
 using core::PropXf;
 
@@ -29,20 +33,56 @@ static PropGhost g_propGhost[8];
 static volatile LONG g_propGhostN = 0;               // frames seen (the latest is [(n - 1) & 7])
 static PropGhost prop_last() { LONG n = g_propGhostN; PropGhost g = {}; if (n > 0) g = g_propGhost[(n - 1) & 7]; return g; }
 
-// from cursor_xf_hook: client_cursor's ghost of the held object, before objects.h reads it
-static void prop_ghost(uint8_t* out) {
+// from prop_check_hook: the transform the placement check stored (slot 0 = the place cursor, 1 =
+// the aim). When it holds an object (an invalid ghost stores nothing: the transform is then still
+// the one moved last frame, and is left), the turns and the nudge go on top.
+static uint8_t g_propOut[2][0x28];                  // each transform as the mod left it last frame
+static void prop_ghost(uint8_t* xf, int slot) {
     if (!prop_now()) return;
+    uint8_t* last = g_propOut[slot];
+    if (!memcmp(xf, last, sizeof g_propOut[0])) return;
     PropGhost g = {};
-    memcpy(g.pos, out, 24); memcpy(g.rot, out + 0x18, 16);
+    memcpy(g.pos, xf, 24); memcpy(g.rot, xf + 0x18, 16);
     g.tick = GetTickCount();
-    g.moved = out[0x28] && prop_xf_now();            // an invalid ghost (sky, too far) places nothing
+    g.moved = prop_xf_now();
     if (g.moved) {
-        core::prop_apply(prop_xf(), g.pos, g.rot, (int64_t*)out, (float*)(out + 0x18));
-        memcpy(g.movedPos, out, 24); memcpy(g.movedRot, out + 0x18, 16);
+        core::prop_apply(prop_xf(), g.pos, g.rot, (int64_t*)xf, (float*)(xf + 0x18));
+        memcpy(g.movedPos, xf, 24); memcpy(g.movedRot, xf + 0x18, 16);
     }
+    memcpy(last, xf, sizeof g_propOut[0]);
+    if (slot) return;
+    // objects.h's ghost (lines, own_click) is the cursor transform's spot: moved by the same nudge
+    if (g.moved) for (int a = 0; a < 3; a++) g_ghost.pos[a] += g.movedPos[a] - g.pos[a];
     LONG n = g_propGhostN;
     g_propGhost[n & 7] = g;
     g_propGhostN = n + 1;
+}
+
+// the placement check's two calls in client_cursor (place cursor, aim), right after the cursor
+// transform call: flags, the transform it stores, and six more arguments passed on as they are
+typedef uint64_t (*PropCheckFn)(void* flags, uint8_t* xf, void* a3, void* a4, void* a5, void* a6, void* a7, void* a8);
+static PropCheckFn g_propCheckOrig = nullptr;
+static uint8_t* g_propCheckRet[2] = {};             // return addresses of the two calls
+static uint64_t prop_check_hook(void* flags, uint8_t* xf, void* a3, void* a4, void* a5, void* a6, void* a7, void* a8) {
+    uint8_t* ret = (uint8_t*)__builtin_return_address(0);
+    const uint64_t r = g_propCheckOrig(flags, xf, a3, a4, a5, a6, a7, a8);
+    if (xf && (ret == g_propCheckRet[0] || ret == g_propCheckRet[1])) prop_ghost(xf, ret == g_propCheckRet[1]);
+    return r;
+}
+static void install_props() {
+    auto rel = [](uint8_t* at) -> uint8_t* { return at && at[0] == 0xE8 ? at + 5 + *(int32_t*)(at + 1) : nullptr; };
+    uint8_t* sig = g_cxClientRet ? find_unique("PropCheckCall", SIG_PROP_CHECK_CALL) : nullptr;
+    uint8_t* sites[2] = { sig ? sig + 0x17 : nullptr, sig ? sig + 0x57 : nullptr };
+    uint8_t* fn = rel(sites[0]);
+    // both calls go to the check, a little after the cursor transform call
+    const bool ok = fn && rel(sites[1]) == fn && sig > g_cxClientRet && sig - g_cxClientRet < 0x200 &&
+                    !memcmp(fn, "\x48\x89\x5C\x24\x18\x4C\x89\x4C\x24\x20", 10);
+    if (ok) {
+        g_propCheckOrig = (PropCheckFn)fn;
+        g_propCheckRet[0] = sites[0] + 5; g_propCheckRet[1] = sites[1] + 5;
+        if (hook_calls(fn, (void*)&prop_check_hook, sites, 2) != 2) g_propCheckOrig = nullptr;
+    }
+    LOG(.str("exact rotation and nudge of objects: ").str(g_propCheckOrig ? "available" : "not available (placement check not found)"));
 }
 
 // A transform (position in metres) against the last frames' ghosts: 1 = a moved ghost, 2 = a ghost
@@ -102,7 +142,10 @@ static void prop_encode_begin(uint8_t* src, uint8_t flags, PropSent* ps) {
         const CursorXf* c = ps->on ? ps->saved : (const CursorXf*)(src + 0x2f8);
         LOG(.str("props: ").str(click ? "click" : "input").str(": ghost (").fix(g.pos[0]).c(',').fix(g.pos[1]).c(',').fix(g.pos[2])
             .str(") moved to (").fix(g.movedPos[0]).c(',').fix(g.movedPos[1]).c(',').fix(g.movedPos[2])
-            .str("); place cursor sent (").fix(c[0].pos[0]).c(',').fix(c[0].pos[1]).c(',').fix(c[0].pos[2]).str(") ").str(kPropMatch[m[0]])
+            .str("), rot (").f(g.rot[0]).c(',').f(g.rot[1]).c(',').f(g.rot[2]).c(',').f(g.rot[3])
+            .str(") moved to (").f(g.movedRot[0]).c(',').f(g.movedRot[1]).c(',').f(g.movedRot[2]).c(',').f(g.movedRot[3])
+            .str("); place cursor sent (").fix(c[0].pos[0]).c(',').fix(c[0].pos[1]).c(',').fix(c[0].pos[2])
+            .str(") rot (").f(c[0].rot[0]).c(',').f(c[0].rot[1]).c(',').f(c[0].rot[2]).c(',').f(c[0].rot[3]).str(") ").str(kPropMatch[m[0]])
             .str(", aim ").str(kPropMatch[m[1]]).str(flags & 2 ? "" : " (not sent)"));
     }
 }

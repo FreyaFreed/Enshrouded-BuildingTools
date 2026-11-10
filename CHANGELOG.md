@@ -3,6 +3,18 @@
 Each `## x.y.z` section is used as the release notes on GitHub and as the file
 changelog on Nexus Mods, so keep it short and written for players.
 
+## 0.31.2-props2 (fork test build)
+
+- **Turn, tilt and roll now turn the object.** props1 turned the surface direction under
+  the cursor instead of the object, so the object did not turn, and with a nudge set the
+  turns moved it around instead. The turns and the nudge now go on the object's own
+  transform, after the game worked it out (its placement check). "Nudge along the
+  object's axes" now follows the object as it is turned; in props1 it followed a fixed
+  direction.
+- The nudge comes after the game's placement check, so the ghost no longer turns red
+  when nudged into a wall, and the object can be placed there.
+- The log shows the rotation as well on each click.
+
 ## 0.31.2-props1 (fork test build)
 
 - **Exact rotation and nudge for objects** (an object in hand: chair, torch, plant...).
